@@ -1,48 +1,80 @@
+# CI/CD Pipeline for React App using GitHub Actions and Docker Hub
 
-# Architecture Ref.Card 02 - React Application (serverless)
+## Project Overview
+This project implements a CI/CD pipeline for a React application using **GitHub Actions** and **Docker Hub**. The pipeline is triggered by changes to the `main` branch and automates the process of building, testing, and pushing a Docker image to Docker Hub.
 
-Link zur Übersicht<br/>
-https://gitlab.com/bbwrl/m346-ref-card-overview
+## Steps Implemented
 
-## Installation der benötigten Werkzeuge
+1. **Set Up Dockerfile**
+   - A `Dockerfile` was created in the root directory of the project to containerize the React app.
+   
+   ```Dockerfile
+   FROM node:14
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm install
+   COPY . .
+   RUN npm run build
+   EXPOSE 3000
+   CMD ["npm", "start"]
 
-Für das Bauen der App wird Node bzw. npm benötigt. Die Tools sind unter 
-der folgenden URL zu finden. Für die meisten Benutzer:innen empfiehlt sich 
-die LTS Version.<br/>
-https://nodejs.org/en/download/
+1. **Create GitHub Actions Workflow**
 
-Node Version Manager<br/>
-Für erfahren Benutzer:innen empfiehlt sich die Installation des 
-Node Version Manager nvm. Dieses Tool erlaubt das Installiert und das 
-Wechseln der Node Version über die Kommandozeile.<br/>
-**Achtung: Node darf noch nicht auf dem Computer installiert sein.**<br/>
-https://learn2torials.com/a/how-to-install-nvm
+A GitHub Actions workflow `.github/workflows/docker-image.yml` was created to automate the CI/CD process. The workflow builds and pushes the Docker image to Docker Hub whenever a change is pushed to the main branch.
 
+```name: CI/CD Pipeline for React App
 
-## Inbetriebnahme auf eigenem Computer
+on:
+  push:
+    branches:
+      - main
 
-Projekt herunterladen<br/>
-```git clone git@gitlab.com:bbwrl/m346-ref-card-02.git```
-<br/>
-```cd architecture-refcard-02```
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-### Projekt bauen und starten
-Die Ausführung der Befehle erfolgt im Projektordner
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-Builden mit Node/npm<br/>
-```$ npm install```
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
 
-Das Projekt wird gebaut und die entsprechenden Dateien unter dem Ordner node_modules gespeichert.
+    - name: Install dependencies
+      run: npm install
 
-Die App kann nun mit folgendem Befehl gestartet werden<br/>
-```$ npm start```
+    - name: Run tests
+      run: npm test
 
-Die App kann nun im Browser unter der URL http://localhost:3000 betrachtet werden.
+    - name: Build React app
+      run: npm run build
 
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+```
 
-### Inbetriebnahme mit Docker Container
-folgt...
+## 3. Docker Hub Access Token Setup
+Generated a Docker Hub access token with Read & Write access and added it to the GitHub repository's secrets.
 
+## 4. GitHub Actions Workflow Trigger
+Pushed changes to the main branch to trigger the GitHub Actions workflow.
 
+## 5. Testing the Workflow
+Verified that the workflow runs successfully by checking the GitHub Actions logs.
+Confirmed that the Docker image was pushed to Docker Hub.
 
+# Result
+
+The Docker image for the React app is automatically built and pushed to Docker Hub on each commit to the main branch. The access token and permissions are correctly configured for secure access to Docker Hub.
