@@ -95,3 +95,79 @@ jobs:
 
 - The Docker image for the React app is automatically built and pushed to **GitHub Container Registry (GHCR)** on each commit to the `main` branch.
 - The **Personal Access Token (PAT)** is used for authentication, ensuring that the workflow can push images to GHCR without restrictions.
+
+
+
+# Amazon Elastic Container Registry (ECR) Setup for ECS Deployment
+
+## Overview:
+Amazon ECR is a fully managed container registry that allows you to store, manage, and deploy Docker container images. In this documentation, we will cover how to push a Docker image to ECR and make it available for deployment to Amazon ECS.
+
+## Prerequisites:
+- An **AWS account** with permissions to create and manage ECR repositories and push images.
+- **AWS CLI** installed and configured with the necessary credentials.
+- **Docker** installed for building and pushing images.
+
+## Steps:
+
+### Step 1: Create an ECR Repository
+To store your Docker images, you need to create an ECR repository.
+
+1. **Login to AWS Console**.
+2. Navigate to the **Amazon ECR** service.
+3. Click on **Create Repository**.
+4. Fill in the following details:
+   - **Repository Name**: Choose a name, e.g., `my-app-repository`.
+   - **Visibility Settings**: Choose **Private** (default).
+   - **Tag Immutability**: You can leave this as **Mutable** to allow overwriting image tags.
+   - **Encryption Settings**: Leave the default option (AES-256) unless you need specific encryption settings.
+5. Click **Create Repository**.
+
+![Alt text](images/Screenshot%202024-10-03%20095108.png)
+
+### Step 2: Authenticate Docker to ECR
+You need to authenticate Docker to push images to your private ECR repository.
+
+Run the following command in the AWS CLI to log in to your ECR repository. Replace `region` and `account-id` with your respective values.
+
+```bash
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
+```
+
+Example for `us-east-1` region and account ID `366079775394`:
+
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 366079775394.dkr.ecr.us-east-1.amazonaws.com
+```
+
+![Alt text](images/Screenshot%202024-10-03%20095151.png)
+![Alt text](images/Screenshot%202024-10-03%20104709.png)
+
+### Step 3: Build Your Docker Image
+After authenticating, you need to build your Docker image if you haven't already. Navigate to your application directory (where your `Dockerfile` is located) and run:
+
+```bash
+docker build -t my-app .
+```
+
+### Step 4: Tag Your Docker Image
+Tag the image with your ECR repository URL:
+
+```bash
+docker tag my-app:latest 366079775394.dkr.ecr.us-east-1.amazonaws.com/my-app-repository:latest
+```
+
+### Step 5: Push the Docker Image to ECR
+Push your Docker image to the ECR repository:
+
+```bash
+docker push 366079775394.dkr.ecr.us-east-1.amazonaws.com/my-app-repository:latest
+```
+
+### Step 6: Verify Image in ECR
+Once the image has been successfully pushed, verify that it is in your ECR repository by navigating to the ECR console. You should see the image in the **Images** section of your repository.
+
+---
+
+## Conclusion
+You have now successfully created an ECR repository, authenticated Docker, and pushed your Docker image to Amazon ECR. This image is now ready to be used for ECS deployments.
